@@ -13,7 +13,7 @@ export default function Home() {
   const products = data?.products ?? [];
 
   return (
-    <Page title="Products">
+    <Page title="">
       <Layout>
         <Layout.Section>
           <AgentChat />
@@ -26,7 +26,7 @@ export default function Home() {
           ) : products.length === 0 ? (
             <Text as="p">No products found</Text>
           ) : (
-            <Grid columns={{ xs: 1, sm: 2, md: 3, lg: 4 }} gap={{ xs: "400", sm: "400", md: "400", lg: "400" }}>
+            <Grid columns={{ xs: 1, sm: 2, md: 3, lg: 4 }} >
               {products.map((p: any) => (
                 <Grid.Cell key={p.id}>
                   <ProductCard

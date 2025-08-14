@@ -78,7 +78,13 @@ async function inferAction(prompt: string): Promise<AgentAction> {
     console.debug("[agent] Calling Gemini with MCP tools enabled to infer action...");
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `${SYSTEM_GUIDE}\n\nUse MCP tools when needed to determine the correct Admin GraphQL.\nReturn ONLY JSON of one of the following shapes:\n{"type":"graphql","query":"...","variables":{}} OR {"type":"intent","intent": <AgentIntent JSON>}\nAgentIntent JSON must follow this union:\n${INTENT_JSON_GUIDE}\n\nUser prompt: ${prompt}`,
+      contents: `${SYSTEM_GUIDE}\n\nUse MCP tools when needed to determine the correct Admin GraphQL.\n
+      Return ONLY JSON of one of the following shapes:\n
+      {"type":"graphql","query":"...","variables":{}} OR {"type":"intent","intent": <AgentIntent JSON>}\n
+      AgentIntent JSON must follow this union:\n
+      ${INTENT_JSON_GUIDE}\n
+      \n
+      User prompt: ${prompt}`,
       config: {
         tools: [mcpToTool(client)],
       },
@@ -93,7 +99,7 @@ async function inferAction(prompt: string): Promise<AgentAction> {
       console.debug("[agent] Parsed JSON directly from model response.");
     } catch {
       const match = text.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error("Model did not return valid JSON");
+      if (!match) throw new Error(`Model did not return valid JSON: ${text}`);
       json = JSON.parse(match[0]);
       console.debug("[agent] Extracted and parsed JSON from response snippet.");
     }
@@ -144,7 +150,7 @@ export async function POST(req: NextRequest) {
       });
       const data = await shopifyGraphQL(action.query, action.variables);
       console.debug("[agent] GraphQL execution complete", { ms: Date.now() - execStart });
-      return NextResponse.json({ type: "graphql_result", data });
+      return NextResponse.json({ success: true, type: "graphql_result", message: "Operation completed successfully.", data });
     } else {
       const intent = (action as IntentAction).intent;
       console.debug("[agent] Dispatching intent:", intent.name, intent.params);
@@ -152,43 +158,43 @@ export async function POST(req: NextRequest) {
         case "list_products": {
           const data = await listProducts(intent.params.limit ?? 24);
           console.debug("[agent] list_products completed", { count: Array.isArray((data as any)?.products) ? (data as any).products.length : undefined });
-          return NextResponse.json({ type: "products", data });
+          return NextResponse.json({ success: true, type: "products", message: "Fetched products successfully.", data });
         }
         case "update_product": {
           const data = await updateProduct(intent.params);
           console.debug("[agent] update_product completed");
-          return NextResponse.json({ type: "update_product", data });
+          return NextResponse.json({ success: true, type: "update_product", message: "Product updated successfully.", data });
         }
         case "create_custom_collection": {
           const data = await createCustomCollection(intent.params);
           console.debug("[agent] create_custom_collection completed");
-          return NextResponse.json({ type: "create_custom_collection", data });
+          return NextResponse.json({ success: true, type: "create_custom_collection", message: "Collection created successfully.", data });
         }
         case "add_product_to_collection": {
           const data = await addProductToCustomCollection(intent.params);
           console.debug("[agent] add_product_to_collection completed");
-          return NextResponse.json({ type: "add_product_to_collection", data });
+          return NextResponse.json({ success: true, type: "add_product_to_collection", message: "Product added to collection.", data });
         }
         case "remove_product_from_collection": {
           const data = await removeProductFromCustomCollection(intent.params);
           console.debug("[agent] remove_product_from_collection completed");
-          return NextResponse.json({ type: "remove_product_from_collection", data });
+          return NextResponse.json({ success: true, type: "remove_product_from_collection", message: "Product removed from collection.", data });
         }
         case "list_customers": {
           const data = await listCustomers(intent.params.limit ?? 24);
           console.debug("[agent] list_customers completed");
-          return NextResponse.json({ type: "customers", data });
+          return NextResponse.json({ success: true, type: "customers", message: "Fetched customers successfully.", data });
         }
         default:
           console.warn("[agent] Unsupported intent encountered");
           // Fallback polite admin support message, max 2 sentences
-          return NextResponse.json({ type: "text", text: "I couldn’t safely perform that request right now. Please rephrase or include the exact product ID and fields to update." });
+          return NextResponse.json({ success: false, type: "text", message: "I couldn’t safely perform that request right now. Please rephrase or include the exact product ID and fields to update." });
       }
     }
   } catch (error) {
     console.error("[agent] Error handling request:", (error as any)?.message, (error as any)?.stack);
     // Fallback polite admin support message, max 2 sentences
-    return NextResponse.json({ type: "text", text: "I couldn’t safely complete that request. Please try again with more details like the product ID and desired changes." }, { status: 200 });
+    return NextResponse.json({ success: false, type: "text", message: `I couldn’t safely complete that request. ${(error as any)?.message}` }, { status: 200 });
   } finally {
     console.debug("[agent] Completed /api/agent", { totalMs: Date.now() - startedAt });
   }

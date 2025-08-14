@@ -1,6 +1,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --pc-shadow-bevel-border-radius-xs: 0px;
 }
 
 @media (prefers-color-scheme: dark) {

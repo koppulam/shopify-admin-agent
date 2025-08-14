@@ -19,7 +19,7 @@ export type ProductCardProps = {
 
 export function ProductCard({ id, title, imageUrl, price }: ProductCardProps) {
   return (
-    <Card>
+    <Card roundedAbove="xl">
       <BlockStack gap="300">
         <InlineStack align="space-between">
           <Text as="h3" variant="headingSm">

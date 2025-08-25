@@ -14,8 +14,8 @@ const geistMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Shopify Admin Agent",
-  description: "Custom admin app with Gemini agent",
+  title: "Deloitte Digital - Shopify Admin Assistant",
+  description: "AI-powered admin app with MCP tools",
 };
 
 export default function RootLayout({
@@ -23,6 +23,25 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          src="https://unpkg.com/@shopify/app-bridge@4"
+          dangerouslySetInnerHTML={{
+            __html: `
+            if (window.top === window.self) {
+              // Not in iframe, allow normal behavior
+            } else {
+              // In iframe, initialize App Bridge
+              document.addEventListener('DOMContentLoaded', function() {
+                if (window.shopify && window.shopify.environment) {
+                  // App Bridge will be initialized by the Providers component
+                }
+              });
+            }
+          `,
+          }}
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <Providers>{children}</Providers>
       </body>

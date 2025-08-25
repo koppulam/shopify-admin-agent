@@ -1,0 +1,23 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "ed5cbe2a7cf293b124e42d5bad2e536a"
+name = "deloitte-admin-assistant-v1"
+handle = "deloitte-admin-assistant-v1"
+application_url = "http://localhost:3000/"
+embedded = true
+
+[build]
+include_config_on_deploy = true
+
+[webhooks]
+api_version = "2024-10"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,write_products,read_customers,read_orders"
+
+[auth]
+redirect_urls = [ "http://localhost:3000/api/auth/callback" ]
+
+[pos]
+embedded = false 

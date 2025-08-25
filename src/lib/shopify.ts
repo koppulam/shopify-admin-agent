@@ -17,6 +17,7 @@ function getEnv(name: string): string {
   return value;
 }
 
+// For standalone usage (when not using Shopify App sessions)
 export async function shopifyRequest<TResponse = unknown>(
   path: string,
   init?: RequestInit
@@ -30,6 +31,31 @@ export async function shopifyRequest<TResponse = unknown>(
     headers: {
       "Content-Type": "application/json",
       "X-Shopify-Access-Token": accessToken,
+      ...(init?.headers || {}),
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Shopify API error ${response.status}: ${text}`);
+  }
+
+  return (await response.json()) as TResponse;
+}
+
+// For Shopify App usage (with session)
+export async function shopifyRequestWithSession<TResponse = unknown>(
+  session: { shop: string; accessToken: string },
+  path: string,
+  init?: RequestInit
+): Promise<TResponse> {
+  const url = `https://${session.shop}/admin/api/${apiVersion}${path}`;
+  const response = await fetch(url, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Access-Token": session.accessToken,
       ...(init?.headers || {}),
     },
     cache: "no-store",
@@ -97,6 +123,30 @@ export async function shopifyGraphQL<TData = unknown>(query: string, variables?:
     headers: {
       "Content-Type": "application/json",
       "X-Shopify-Access-Token": accessToken,
+    },
+    body: JSON.stringify({ query, variables }),
+    cache: "no-store",
+  });
+
+  const json = await response.json();
+  if (!response.ok || json.errors) {
+    throw new Error(`Shopify GraphQL error: ${JSON.stringify(json.errors || json)}`);
+  }
+  return json.data as TData;
+}
+
+export async function shopifyGraphQLWithSession<TData = unknown>(
+  session: { shop: string; accessToken: string },
+  query: string, 
+  variables?: Record<string, any>
+): Promise<TData> {
+  const url = `https://${session.shop}/admin/api/${apiVersion}/graphql.json`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Access-Token": session.accessToken,
     },
     body: JSON.stringify({ query, variables }),
     cache: "no-store",
